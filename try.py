@@ -13,8 +13,8 @@ def to_seconds(line):
 
 
 print("reading file...") # 2015-12-25, ezLarge
-df = pd.read_csv("D:/KMUTT/_IHPC_Internship/Data/EZLink/ezLarge.csv")
-df = df.loc[(df['travelMode'] == "Bus")]
+df = pd.read_csv("C:/_IHPC_Internship/Data/EZLink/ezLarge.csv")
+df = df[(df['travelMode'] == "Bus") & (df['endDate'] != '0000-00-00')]
 df = df[['cardID','busRegNum','busTripNum','startTime','endTime']]
 df['busTripNum'] = df['busTripNum'].map(int)
 df['startTime'] = df['startTime'].map(to_seconds)
@@ -23,11 +23,11 @@ df['endTime'] = df['endTime'].map(to_seconds)
 print("creating agent list")
 agentList = list(df.cardID.unique())
 
-print("creating location list")
-locationList = list(set(zip(df.busRegNum, df.busTripNum)))
+#print("creating location list")
+#locationList = list(set(zip(df.busRegNum, df.busTripNum)))
 
 agentList.sort()
-locationList.sort()
+#locationList.sort()
 df.sort_values(['cardID', 'startTime'], ascending=[True, True], inplace=True)
 
 
@@ -55,32 +55,35 @@ df.sort_values(['cardID', 'startTime'], ascending=[True, True], inplace=True)
 # Agent Social Network
 #==============================================================================
 G = nx.MultiGraph()
-# G.add_nodes_from(agentList)
+#G.add_nodes_from(agentList)
 
 othersActivities = df
 
-i = 0
+
 for x in agentList:
-    myActivities = othersActivities.loc[othersActivities.cardID == x]
-    othersActivities = othersActivities.loc[othersActivities.cardID != x]
+    myActivities = othersActivities[othersActivities['cardID'] == x]
+    othersActivities = othersActivities[othersActivities['cardID'] != x]
 
     for activity in myActivities.itertuples():
         # print("my activity")
         # print(activity)
-        nearbyAgent = othersActivities.loc[
-        (othersActivities['busRegNum'] == activity[2]) \
-        & (othersActivities['busTripNum'] == activity[3]) \
-        & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
-        ]
+        nearbyAgent = othersActivities[
+                (othersActivities['busRegNum'] == activity[2]) \
+                & (othersActivities['busTripNum'] == activity[3]) \
+                & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
+            ]
         # print("nearby")
         # print(nearbyAgent)
+        
+        if nearbyAgent.empty:
+            G.add_node(activity[1])
+        else:
+            G.add_node(activity[1])
+            for agent in nearbyAgent.itertuples():
+                overlap = min(activity[5], agent[5]) - max(activity[4], agent[4])
+                G.add_node(agent[1])
+                G.add_edge(activity[1],agent[1], weight = overlap)
 
-        for agent in nearbyAgent.itertuples():
-            overlap = max(0, min(activity[5], agent[5]) - max(activity[4], agent[4]));
-            G.add_edge(activity[1],agent[1], weight = overlap)
-    # i = i + 1
-    # if i > 100:
-    #     break
 #==============================================================================
 
 #==============================================================================
@@ -105,3 +108,4 @@ nx.draw_networkx_edges(G,pos,edgelist=esmall,width=3,alpha=0.3,edge_color='b',st
 plt.axis('off')
 plt.savefig("weighted_graph.png") # save as png
 plt.show() # display
+#==============================================================================
