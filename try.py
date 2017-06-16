@@ -1,6 +1,7 @@
 import pandas as pd
 import networkx as nx
 from networkx.algorithms import bipartite
+import matplotlib.pyplot as plt
 
 # searching on list of tuples
 # [i for i, v in enumerate(locationList) if v[0] == 1 and v[1] == 1]
@@ -33,20 +34,20 @@ df.sort_values(['cardID', 'startTime'], ascending=[True, True], inplace=True)
 #==============================================================================
 # Try bipartite
 #==============================================================================
-B = nx.MultiGraph()
-B.add_nodes_from(agentList, bipartite=0)
-B.add_nodes_from(locationList, bipartite=1)
+# B = nx.MultiGraph()
+# B.add_nodes_from(agentList, bipartite=0)
+# B.add_nodes_from(locationList, bipartite=1)
 
-for t in df.itertuples():
-    agent, location, time = t[1], (t[2], t[3]), (t[4], t[5])
-    B.add_edge(agent, location, t=time)
+# for t in df.itertuples():
+#     agent, location, time = t[1], (t[2], t[3]), (t[4], t[5])
+#     B.add_edge(agent, location, t=time)
 
-agentSet = set(n for n,d in B.nodes(data=True) if d['bipartite']==0)
-locationSet = set(B) - agentSet
+# agentSet = set(n for n,d in B.nodes(data=True) if d['bipartite']==0)
+# locationSet = set(B) - agentSet
 
-closenessCentrality = bipartite.closeness_centrality(B, locationSet)
-degreeCentrality = bipartite.degree_centrality(B, locationSet)
-betweennessCentrality = bipartite.betweenness_centrality(B, locationSet)
+# closenessCentrality = bipartite.closeness_centrality(B, locationSet)
+# degreeCentrality = bipartite.degree_centrality(B, locationSet)
+# betweennessCentrality = bipartite.betweenness_centrality(B, locationSet)
 #==============================================================================
 
 
@@ -54,7 +55,7 @@ betweennessCentrality = bipartite.betweenness_centrality(B, locationSet)
 # Agent Social Network
 #==============================================================================
 G = nx.MultiGraph()
-G.add_nodes_from(agentList)
+# G.add_nodes_from(agentList)
 
 othersActivities = df
 
@@ -64,19 +65,43 @@ for x in agentList:
     othersActivities = othersActivities.loc[othersActivities.cardID != x]
 
     for activity in myActivities.itertuples():
-        print("my activity")
-        print(activity)
+        # print("my activity")
+        # print(activity)
         nearbyAgent = othersActivities.loc[
         (othersActivities['busRegNum'] == activity[2]) \
         & (othersActivities['busTripNum'] == activity[3]) \
         & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
         ]
-        print("nearby")
-        print(nearbyAgent)
+        # print("nearby")
+        # print(nearbyAgent)
 
         for agent in nearbyAgent.itertuples():
             overlap = max(0, min(activity[5], agent[5]) - max(activity[4], agent[4]));
-            G.add_weighted_edges_from([activity[1],agent[1]], overlap)
-
-    break
+            G.add_edge(activity[1],agent[1], weight = overlap)
+    # i = i + 1
+    # if i > 100:
+    #     break
 #==============================================================================
+
+#==============================================================================
+# Draw a graph
+#==============================================================================
+
+elarge=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight'] >300]
+esmall=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight'] <=300]
+
+pos=nx.spring_layout(G) # positions for all nodes
+
+# nodes
+nx.draw_networkx_nodes(G,pos,node_size=20)
+
+# edges
+nx.draw_networkx_edges(G,pos,edgelist=elarge,width=3)
+nx.draw_networkx_edges(G,pos,edgelist=esmall,width=3,alpha=0.3,edge_color='b',style='dashed')
+
+# labels
+# nx.draw_networkx_labels(G,pos,font_size=5,font_family='sans-serif')
+
+plt.axis('off')
+plt.savefig("weighted_graph.png") # save as png
+plt.show() # display
