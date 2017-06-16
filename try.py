@@ -13,7 +13,7 @@ def to_seconds(line):
 
 
 print("reading file...") # 2015-12-25, ezLarge
-df = pd.read_csv("C:/_IHPC_Internship/Data/EZLink/ezLarge.csv")
+df = pd.read_csv("D:/KMUTT/_IHPC_Internship/Data/EZLink/ezLarge.csv")
 df = df[(df['travelMode'] == "Bus") & (df['endDate'] != '0000-00-00')]
 df = df[['cardID','busRegNum','busTripNum','startTime','endTime']]
 df['busTripNum'] = df['busTripNum'].map(int)
@@ -60,29 +60,22 @@ G = nx.MultiGraph()
 othersActivities = df
 
 
-for x in agentList:
-    myActivities = othersActivities[othersActivities['cardID'] == x]
-    othersActivities = othersActivities[othersActivities['cardID'] != x]
+for myAgent in agentList:
+    myActivities = othersActivities[othersActivities['cardID'] == myAgent]
+    othersActivities = othersActivities[othersActivities['cardID'] != myAgent]
+
+    G.add_node(myAgent)
 
     for activity in myActivities.itertuples():
-        # print("my activity")
-        # print(activity)
         nearbyAgent = othersActivities[
-                (othersActivities['busRegNum'] == activity[2]) \
-                & (othersActivities['busTripNum'] == activity[3]) \
-                & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
-            ]
-        # print("nearby")
-        # print(nearbyAgent)
-        
-        if nearbyAgent.empty:
-            G.add_node(activity[1])
-        else:
-            G.add_node(activity[1])
-            for agent in nearbyAgent.itertuples():
-                overlap = min(activity[5], agent[5]) - max(activity[4], agent[4])
-                G.add_node(agent[1])
-                G.add_edge(activity[1],agent[1], weight = overlap)
+            (othersActivities['busRegNum'] == activity[2]) \
+            & (othersActivities['busTripNum'] == activity[3]) \
+            & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
+        ]       
+        for agent in nearbyAgent.itertuples():
+            overlap = min(activity[5], agent[5]) - max(activity[4], agent[4])
+            G.add_node(agent[1])
+            G.add_edge(activity[1],agent[1], weight = overlap)
 
 #==============================================================================
 
