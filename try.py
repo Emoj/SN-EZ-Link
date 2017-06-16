@@ -13,7 +13,7 @@ def to_seconds(line):
 
 print("reading file...") # 2015-12-25, ezLarge
 df = pd.read_csv("D:/KMUTT/_IHPC_Internship/Data/EZLink/ezLarge.csv")
-df = df[df.travelMode == "Bus"]
+df = df.loc[(df['travelMode'] == "Bus")]
 df = df[['cardID','busRegNum','busTripNum','startTime','endTime']]
 df['busTripNum'] = df['busTripNum'].map(int)
 df['startTime'] = df['startTime'].map(to_seconds)
@@ -53,18 +53,30 @@ betweennessCentrality = bipartite.betweenness_centrality(B, locationSet)
 #==============================================================================
 # Agent Social Network
 #==============================================================================
-G = nx.Graph()
+G = nx.MultiGraph()
 G.add_nodes_from(agentList)
 
 othersActivities = df
 
 i = 0
 for x in agentList:
-    myActivities = othersActivities[othersActivities.cardID == x]
-    othersActivities = othersActivities[othersActivities.cardID != x]
+    myActivities = othersActivities.loc[othersActivities.cardID == x]
+    othersActivities = othersActivities.loc[othersActivities.cardID != x]
 
-#    for activity in myActivities.itertuples():
+    for activity in myActivities.itertuples():
+        print("my activity")
+        print(activity)
+        nearbyAgent = othersActivities.loc[
+        (othersActivities['busRegNum'] == activity[2]) \
+        & (othersActivities['busTripNum'] == activity[3]) \
+        & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
+        ]
+        print("nearby")
+        print(nearbyAgent)
 
-    print(len(othersActivities))
+        for agent in nearbyAgent.itertuples():
+            overlap = max(0, min(activity[5], agent[5]) - max(activity[4], agent[4]));
+            G.add_weighted_edges_from([activity[1],agent[1]], overlap)
 
+    break
 #==============================================================================
