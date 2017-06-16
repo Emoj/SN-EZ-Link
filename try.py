@@ -64,7 +64,8 @@ for x in agentList:
     othersActivities = othersActivities[othersActivities.cardID != x]
 
 #    for activity in myActivities.itertuples():
-
+    i = i + 1
+    print(str(i) + " ")
     print(len(othersActivities))
 
 #==============================================================================
