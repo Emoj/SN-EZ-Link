@@ -123,7 +123,6 @@ for key, value in degree_all.items():
 print("node with zero degree: " + str(zero_count))
     
 max_centrality = max(degree_centrality, key=lambda key: degree_centrality[key])
-max_degree = max(degree_all, key=lambda key: degree_centrality[key])
 
 for key, value in degree_centrality.items():
     if value == degree_centrality[max_centrality]:
