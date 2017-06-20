@@ -62,15 +62,15 @@ df.sort_values(['cardID', 'startTime'], ascending=[True, True], inplace=True)
 #==============================================================================
 # Agent Social Network
 #==============================================================================
-G = nx.MultiDiGraph(name="Agent Social Network")
+G = nx.Graph(name="Agent Social Network")
 G.add_nodes_from(agentList)
 
 othersActivities = df
 
 i = 0
 for myAgent in agentList:
-#    if i == 20:
-#        break
+    if i == 10:
+        break
     myActivities = othersActivities[othersActivities['cardID'] == myAgent]
     othersActivities = othersActivities[othersActivities['cardID'] != myAgent]
     
@@ -82,9 +82,14 @@ for myAgent in agentList:
         ]
         for agent in nearbyAgent.itertuples():
             overlap = min(activity[5], agent[5]) - max(activity[4], agent[4])
-            G.add_edge(activity[1],agent[1], weight = overlap)
+            if activity[1] in G.neighbors(agent[1]):
+                G[activity[1]][agent[1]]['weight'] += overlap
+            else:
+                G.add_edge(activity[1],agent[1], weight = overlap)
     i = i + 1
-#    print("Agent#" + str(i) + " out of " + str(len(agentList)))
+    print("Agent#" + 
+          
+          str(i) + " out of " + str(len(agentList)))
 
 
 #==============================================================================
@@ -93,7 +98,7 @@ for myAgent in agentList:
 elarge=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight'] >300]
 esmall=[(u,v) for (u,v,d) in G.edges(data=True) if d['weight'] <=300]
 
-pos = nx.spring_layout(G) # positions for all nodes
+pos = nx.random_layout(G) # positions for all nodes
 
 # nodes
 nx.draw_networkx_nodes(G,pos,node_size=5)
@@ -103,45 +108,54 @@ nx.draw_networkx_edges(G,pos,edgelist=elarge,width=1)
 nx.draw_networkx_edges(G,pos,edgelist=esmall,width=1,alpha=0.5,edge_color='b')
 
 plt.axis('off')
+#plt.show() # display
 plt.savefig("weighted_graph.svg") # save as png
-plt.show() # display
 
 
 #==============================================================================
 # Some analytics
 #==============================================================================
-degree_all = G.degree()
-degree_centrality = nx.degree_centrality(G)
+deg = G.degree()
+deg_centrality = nx.degree_centrality(G)
+pr = nx.pagerank(G)
 
 degree_count = 0
 zero_count = 0
 
-for key, value in degree_all.items():
+for key, value in deg.items():
     if value == 0:
         zero_count = zero_count + 1
 
 print("node with zero degree: " + str(zero_count))
     
-max_centrality = max(degree_centrality, key=lambda key: degree_centrality[key])
+max_centrality = max(deg_centrality, key=lambda key: deg_centrality[key])
+max_pr = max(pr, key=lambda key: pr[key])
 
-for key, value in degree_centrality.items():
-    if value == degree_centrality[max_centrality]:
+print("agent with highest degree of centrllity")
+for key, value in deg_centrality.items():
+    if value == deg_centrality[max_centrality]:
+        print(key + ": " + str(value))
+
+print("agent with highest pagerank score")
+for key, value in pr.items():
+    if value == pr[max_pr]:
         print(key + ": " + str(value))
         
 
 #==============================================================================
 # Check for no neighbor  #ezLarge:82
 #==============================================================================
-i = 0
-for myAgent in agentList:
-    myActivities = df[df['cardID'] == myAgent]
-    othersActivities = df[df['cardID'] != myAgent]
-    
-    for activity in myActivities.itertuples():
-        nearbyAgent = othersActivities[
-            (othersActivities['busRegNum'] == activity[2]) \
-            & (othersActivities['busTripNum'] == activity[3]) \
-            & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
-        ]
-        if nearbyAgent.empty:
-            i = i + 1
+#i = 0
+#for myAgent in agentList:
+#    myActivities = df[df['cardID'] == myAgent]
+#    othersActivities = df[df['cardID'] != myAgent]
+#    
+#    for activity in myActivities.itertuples():
+#        nearbyAgent = othersActivities[
+#            (othersActivities['busRegNum'] == activity[2]) \
+#            & (othersActivities['busTripNum'] == activity[3]) \
+#            & ((activity[4] <= othersActivities['endTime']) & (othersActivities['startTime'] <= activity[5])) \
+#        ]
+#        if nearbyAgent.empty:
+#            i = i + 1
+
